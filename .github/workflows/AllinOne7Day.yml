@@ -1,3 +1,5 @@
+name: Auto Allinone 7day EPG
+
 on:
   schedule:
     - cron: '30 02 * * *'
@@ -8,7 +10,7 @@ permissions:
 
 # Prevent parallel conflicts (same as Tata style)
 concurrency:
-  group: Allinone-epg-update
+  group: Allinone7day-epg-update
   cancel-in-progress: false
 
 jobs:
@@ -53,7 +55,7 @@ jobs:
           exit 0
         fi
 
-        git commit -m "Auto Allinone7Day EPG updated"
+        git commit -m "Auto Allinone7day EPG updated"
 
         # 🔥 CRITICAL: sync before push
         git pull --rebase origin main
