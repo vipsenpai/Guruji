@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
 
-# Prevent parallel conflicts (same as Tata style)
 concurrency:
   group: Allinone7day-epg-update
   cancel-in-progress: false
