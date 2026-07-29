@@ -1,67 +1,107 @@
 name: Auto All EPG
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '30 3 * * *'
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: AllEpg-epg-update
+  group: Auto-All-EPG
   cancel-in-progress: false
 
 jobs:
-  build:
+  allinone:
+    name: Generate Allinone 7Day
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0   # REQUIRED for rebase
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Install 7zip
-      run: sudo apt-get update && sudo apt-get install -y p7zip-full
+      - name: Install 7zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
 
-    - name: Extract ZIP Securely
-      run: 7z x ignore/Allinone2.zip -p"${{ secrets.ZIP_PASSWORD }}" -y
+      - name: Extract ZIP Securely
+        run: 7z x ignore/Allinone.zip -p"${{ secrets.ZIP_PASSWORD }}" -y
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install Python dependencies
-      run: |
-        pip install --no-cache-dir requests pytz
+      - name: Install Python dependencies
+        run: |
+          pip install --no-cache-dir requests pytz
 
-    - name: Run Script
-      run: python -u Allinone2.py
+      - name: Run Script
+        run: python -u Allinone.py
 
-    - name: Commit & Push Output
-      run: |
-        git config user.name "github-actions"
-        git config user.email "actions@github.com"
+      - name: Commit & Push Output
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
 
-        # Add file if exists
-        git add Airtelepg.xml.gz || echo "No file found"
-        git add tata.xml.gz || echo "No file found"
-        git add jio.xml.gz || echo "No file found"
-        git add dishtvEPG.xml.gz || echo "No file found"
-        git add Zee5.xml.gz || echo "No file found"
+          git add allinone.xml.gz || echo "No file found"
 
-        # Skip commit if no real changes
-        if git diff --cached --quiet; then
-          echo "No changes to commit"
-          exit 0
-        fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
 
-        git commit -m "Auto All 7day EPG updated"
+          git commit -m "Auto Allinone7day EPG updated"
+          git pull --rebase origin main
+          git push origin main
 
-        # 🔥 CRITICAL: sync before push
-        git pull --rebase origin main
+  allproviders:
+    name: Generate Provider EPGs
+    needs: allinone
+    runs-on: ubuntu-latest
 
-        # Push safely
-        git push origin main
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install 7zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+
+      - name: Extract ZIP Securely
+        run: 7z x ignore/Allinone2.zip -p"${{ secrets.ZIP_PASSWORD }}" -y
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --no-cache-dir requests pytz
+
+      - name: Run Script
+        run: python -u Allinone2.py
+
+      - name: Commit & Push Output
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add Airtelepg.xml.gz || echo "No file found"
+          git add tata.xml.gz || echo "No file found"
+          git add jio.xml.gz || echo "No file found"
+          git add dishtvEPG.xml.gz || echo "No file found"
+          git add Zee5.xml.gz || echo "No file found"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Auto All 7day EPG updated"
+          git pull --rebase origin main
+          git push origin main
